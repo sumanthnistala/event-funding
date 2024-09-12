@@ -18,7 +18,52 @@ const authenticateToken = (req, res, next) => {
     next();
   });
 };
+
 router.post("/mint", authenticateToken, (req, res) => {
+  const { username, amount, eventId } = req.body;
+  var selectQuery =
+    "select * from users_table where username='" +
+    username +
+    "'";
+  let existingAmount = 0;
+  db.connect(function (err) {
+    if (err) throw err;
+
+    db.query(selectQuery, (err, rows) => {
+      if (err) {
+                res.status(500).send(err);
+      }
+      else {
+            if (rows[0] == null) {
+                res.status(500).send("User not exists");
+            } 
+      else {
+          existingAmount = rows[0].tokenbalance;
+          let updatedAmount = parseInt(existingAmount) + parseInt(amount);
+          var updateQuery =
+                "update users_table set tokenbalance =" + updatedAmount + " where username='" +
+                username +"'";
+                db.query(updateQuery, (err, rows) => {
+                  if (err) {
+                    console.log(err);
+                      res.status(500).send(err);
+                  }
+                   else {
+              let transaction = "" + username + updatedAmount + new Date().toDateString();
+            let hash = crypto
+              .createHash("sha256")
+              .update(transaction)
+              .digest("hex");
+              res.json({ hash });
+            }
+          });
+        }
+      }
+    });
+  });
+});
+
+router.post("/transfer", authenticateToken, (req, res) => {
   const { username, amount, eventId } = req.body;
 
   var selectQuery =
@@ -32,9 +77,10 @@ router.post("/mint", authenticateToken, (req, res) => {
   let existingAmount = 0;
   let existingfundRaised = 0;
   console.log(selectQuery);
-  var updateQuery = "insert into users_funds(id, user_id, event_id, fund_donated) values (?,?,?,?)";
-  
-   db.connect(function (err) {
+  var updateQuery =
+    "insert into users_funds(id, user_id, event_id, fund_donated) values (?,?,?,?)";
+
+  db.connect(function (err) {
     if (err) throw err;
 
     db.query(selectQuery, (err, rows) => {
@@ -42,68 +88,87 @@ router.post("/mint", authenticateToken, (req, res) => {
         console.log(err);
         res.status(500).send(err);
       } else {
-        user_id = rows[0].user_id;
-        console.log("Row" + user_id);
-        existingAmount = rows[0].tokenbalance;
-
-        db.query(selectQuery1, (err, rows) => {
-          if (err) {
-            console.log(err);
-            res.status(500).send(err);
-          } else {
-            existingfundRaised = rows[0].funds_raised;
-            console.log("Ext fund raised"+ existingfundRaised);
-            console.log([0,user_id,eventId,amount]);
-            db.query(updateQuery, [0,user_id,eventId,amount], (err, rows) => {
-              if (err) {
-                console.log(err);
-                res.status(500).send(err);
+        if (rows[0] == null) {
+          res.status(500).send("User not exists");
+        } else {
+          existingAmount = rows[0].tokenbalance;
+          user_id = rows[0].user_id;
+          db.query(selectQuery1, (err, rows) => {
+            if (err) {
+              console.log(err);
+              res.status(500).send(err);
+            } else {
+              if (rows[0] == null) {
+                res.status(500).send("Event not exists");
               } else {
-                var updateQuery1 = "update users_table set tokenbalance =" + Math.abs(existingAmount - amount) +
-                " where user_id=" + user_id;
-                db.query(updateQuery1, (err, rows) => {
-                  if (err) {
-                    console.log(err);
-                    res.status(500).send(err);
-                  } else {
-                    let updatedAmount = parseInt(existingfundRaised) + parseInt(amount);
-                    console.log("updated"+ updatedAmount);
-                    var updateQuery2 = "update events_table set funds_raised =" + updatedAmount+
-                    " where event_id=" +  eventId;
-                    db.query(updateQuery2, (err, rows) => {
-                      if (err) {
-                        console.log(err);
-                        res.status(500).send(err);
-                      } else {
-                        let transaction = ""+user_id+ updatedAmount+ eventId;
-                        let hash = crypto.createHash("sha256").update(transaction).digest("hex") 
-                        res.json({hash});
-                      }
-                    });
+                existingfundRaised = rows[0].funds_raised;
+
+                db.query(
+                  updateQuery,
+                  [0, user_id, eventId, amount],
+                  (err, rows) => {
+                    if (err) {
+                      console.log(err);
+                      res.status(500).send(err);
+                    } else {
+                      var updateQuery1 =
+                        "update users_table set tokenbalance =" +
+                        Math.abs(existingAmount - amount) +
+                        " where user_id=" +
+                        user_id;
+                      db.query(updateQuery1, (err, rows) => {
+                        if (err) {
+                          console.log(err);
+                          res.status(500).send(err);
+                        } else {
+                          let updatedAmount =
+                            parseInt(existingfundRaised) + parseInt(amount);
+                          var updateQuery2 =
+                            "update events_table set funds_raised =" +
+                            updatedAmount +
+                            " where event_id=" +
+                            eventId;
+                          db.query(updateQuery2, (err, rows) => {
+                            if (err) {
+                              console.log(err);
+                              res.status(500).send("Transaction failed");
+                            } else {
+                              let transaction =
+                                "" + user_id + updatedAmount + eventId + new Date().toDateString();
+                              let hash = crypto
+                                .createHash("sha256")
+                                .update(transaction)
+                                .digest("hex");
+                              res.json({ hash });
+                            }
+                          });
+                        }
+                      });
+                    }
                   }
-                });
+                );
               }
-            });
-          }
-        });
+            }
+          });
+        }
       }
     });
   });
 });
 
 // Simulate checking user token balance
-router.get("/balance", authenticateToken,(req, res) => {
-  var selectQuery = "select * from users_table where username='" + req.query["username"] + "'";
-
-  let existingAmount = 0;
+router.get("/balance", authenticateToken, (req, res) => {
+  var selectQuery =
+    "select * from users_table where username='" + req.query["username"] + "'";
   db.connect(function (err) {
     if (err) throw err;
     db.query(selectQuery, (err, rows) => {
       if (err) {
-        console.log(err);
-        res.status(500).send(err);
+        res.status(500).send("User not found");
       } else {
-       res.json(rows[0].tokenbalance);
+        if (rows[0] == null) {
+          res.status(500).send("User not found");
+        } else res.json(rows[0].tokenbalance);
       }
     });
   });

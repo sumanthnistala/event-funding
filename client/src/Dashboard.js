@@ -7,7 +7,6 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   let token = localStorage.getItem("token");
   useEffect(() => {
-    console.log("Api");
     const getEventdata = async () => {
       setLoading(true);
       const eventData = await axios.get(`${API_URL}/events`, {
@@ -16,24 +15,25 @@ const Dashboard = () => {
       if (eventData?.data) {
         setData(eventData.data);
       }
-      console.log("Event data" + data);
-      console.log(eventData.data);
       setLoading(true);
     };
     getEventdata();
   }, []);
 
   return (
-    <div>
+    <div className="mainContainer">
+      <div className={"titleContainer"}>
+        <h2>Event Dashboard</h2>
+      </div>
       {data !== null && data.length >= 1 && loading && (
         <>
-                    <div className={"divContainer"}>
-                <label className={"labelContainer"}>Title</label>
-                <label className={"labelContainer"}>Description</label>
-                <label className={"labelContainer"}>Funds Raised</label>
-              </div>
+          <div className={"divContainer"}>
+            <label className={"labelHeaderContainer"}>Title</label>
+            <label className={"labelHeaderContainer"}>Description</label>
+            <label className={"labelHeaderContainer"}>Funds Raised</label>
+          </div>
           {data?.map((elem) => (
-            <>  
+            <>
               <div className={"divContainer"}>
                 <label className={"labelContainer"}>{elem.event_title}</label>
                 <label className={"labelContainer"}>

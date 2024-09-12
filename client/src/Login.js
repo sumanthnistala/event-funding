@@ -40,7 +40,7 @@ export default function Login() {
         <label className={"labelContainer"}>UserName</label>
 
         <input
-          className="{inputContainer}"
+          className={"inputContainer"}
           autoFocus
           type="text"
           value={username}

@@ -17,8 +17,7 @@ const Register = () => {
     try {
       const { data } = await axios.post(`${API_URL}/register`, {
         username,
-        password,
-        amount
+        password
       });
       
       if (data.token !== null && data.token !== "")
@@ -42,7 +41,7 @@ const Register = () => {
         <label className={"labelContainer"}>UserName</label>
 
         <input
-          className="{inputContainer}"
+          className={"inputContainer"}
           autoFocus
           type="text"
           value={username}
@@ -57,16 +56,6 @@ const Register = () => {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
-      <div className={"divContainer"}>
-        <label className={"labelContainer"}>Amount in Tokens</label>
-
-        <input
-          className={"inputContainer"}
-          type="number"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
         />
       </div>
       <div>

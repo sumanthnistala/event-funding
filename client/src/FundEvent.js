@@ -8,7 +8,7 @@ const FundEvent = () => {
   const token = localStorage.getItem("token");
   const location = useLocation();
   const { id } = location.state;
-  const [balance, setBalance] = useState();
+  const [balance, setBalance] = useState("No tokens minted in your accout. Please use Mint Token functionality.");
 
   useEffect(() => {
     getBalance();
@@ -20,7 +20,7 @@ const FundEvent = () => {
         headers: { Authorization: `Bearer ${token}` },
       }
     );
-    setBalance(balance.data);
+    setBalance("My Token Balance:"+balance.data);
   };
 
   const onFundEvent = async () => {
@@ -31,25 +31,27 @@ const FundEvent = () => {
       return;
     }
     const mint = await axios.post(
-      `${API_URL}/mint`,
+      `${API_URL}/transfer`,
       { username, amount, eventId },
       {
         headers: { Authorization: `Bearer ${token}` },
       }
     );
 
-    alert("Transferred money: "+ mint.data.hash);
+    alert("Transferred tokens with transaction hash: "+ mint.data.hash);
+    getBalance();
+    setAmount(0);
   };
   return (
     <div className={"mainContainer"}>
       <div className={"titleContainer"}>
  
         <h2>Fund Event</h2>
-        <h5>My Token Balance:{balance}</h5>
+        <h5>{balance}</h5>
       </div>
       <div className={"divContainer"}>
         <label className={"labelContainer"}>
-          Tokens(Minted using simulator):
+          Tokens:
         </label>
         <input
           className={"inputContainer"}

@@ -21,10 +21,10 @@ const authenticateToken = (req, res, next) => {
 };
 
 router.post("/register", (req, res) => {
-  const { username, password, amount } = req.body;
+  const { username, password } = req.body;
   var insertQuery =
     "INSERT INTO users_table (user_id, username, user_password, tokenbalance) VALUES (?, ?, ?, ?)";
-  var values = [0, username, password, amount];
+  var values = [0, username, password, 0];
 
   var selectquery = "select * from users_table where username='" + username +"'";
   db.connect(function (err) {
@@ -33,14 +33,12 @@ router.post("/register", (req, res) => {
       if (err) {
         throw err;
       } else {
-        console.log(rows[0]);
         if (rows[0] == null) {
           db.query(insertQuery, values, (err, result) => {
             if (err) {
               console.log(err);
               res.status(500).send(err);
             } else {
-              console.log("Number of records inserted: " + result.affectedRows);
               const token = jwt.sign({ username, password }, JWT_SECRET);
               res.json({ token });
             }
@@ -59,25 +57,18 @@ router.post("/register", (req, res) => {
 router.post("/login", (req, res) => {
   const { username, password } = req.body;
   var selectquery = "select * from users_table where username='" + username +"'";
-  console.log("Un" + username);
   db.connect(function (err) {
     if (err) throw err;
     db.query(selectquery, (err, rows) => {
       if (err) {
         throw err;
       } else {
-        console.log("Rows[0]"+rows[0]);
-        console.log(Object.keys(rows[0]));
         if (rows[0] == null) {
-          console.log(1);
           res.status(500).send("User does not exists");
         } else if (rows[0].user_password != password) {
-          console.log(2);
           res.status(500).send("Invalid password");
         } else {
-          console.log(3);
           const token = jwt.sign({ username, password }, JWT_SECRET);
-          console.log(token);
           res.json({ token });
         }
       }
@@ -105,10 +96,8 @@ router.post("/createEvent", authenticateToken,(req, res) => {
     if (err) throw err;
     db.query(query, values, (err, result) => {
       if (err) {
-        console.log(err);
         res.status(500).send(err);
       } else {
-        console.log("Number of records inserted: " + result.affectedRows);
         res.json("Event Created");
       }
     });
@@ -121,7 +110,6 @@ router.get("/events",authenticateToken, async (req, res) => {
     if (err) throw err;
     db.query(query, (err, rows) => {
       if (err) {
-        console.log(err);
         res.status(500).send(err);
       } else {
         res.json(rows);
@@ -136,7 +124,6 @@ router.get("/eventDescription",authenticateToken, (req, res) => {
     if (err) throw err;
     db.query(query, (err, rows) => {
       if (err) {
-        console.log(err);
         res.status(500).send(err);
       } else {
         res.json(rows);
@@ -152,31 +139,11 @@ router.get("/getMyEvents", authenticateToken, (req, res) => {
     if (err) throw err;
     db.query(query, (err, rows) => {
       if (err) {
-        console.log(err);
         res.status(500).send(err);
       } else {
-        console.log(rows);
         res.json(rows);
       }
     });
-  });
-});
-
-router.post("/checkAccount", (req, res) => {
-  const { email } = req.body;
-
-  console.log(req.body);
-
-  const user = db
-    .get("users_table")
-    .value()
-    .filter((user) => email === user.email);
-
-  console.log(user);
-
-  res.status(200).json({
-    status: user.length === 1 ? "User exists" : "User does not exist",
-    userExists: user.length === 1,
   });
 });
 
@@ -187,10 +154,8 @@ router.delete("/deleteEvent", authenticateToken, (req, res) => {
     if (err) throw err;
     db.query(query, (err, rows) => {
       if (err) {
-        console.log(err);
         res.status(500).send(err);
       } else {
-        console.log(rows);
         res.json("Event delete successfully");
       }
     });

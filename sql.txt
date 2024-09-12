@@ -6,6 +6,7 @@ CREATE TABLE events_table (
     event_deadline DATE not null,
     creatorId varchar(255) not null,
     funds_raised INT DEFAULT 0
+    FOREIGN KEY (creatorId) REFERENCES users_table(username)
   );
   
   create table users_table(
@@ -16,7 +17,7 @@ CREATE TABLE events_table (
   );
   
   create table users_funds(
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  transaction_id INT AUTO_INCREMENT PRIMARY KEY,
   user_id int,
   event_id int,
   fund_donated int,
